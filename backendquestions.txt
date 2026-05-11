@@ -1,0 +1,66 @@
+1. Database Atomicity and Rollbacks
+In the way you are currently using Entity Framework (EF) Core, yes, if it fails, the DB is generally safe.
+
+Atomic Operations: When you call await _context.SaveChangesAsync(), EF Core creates a Transaction behind the scenes. If the database encounters an error (like a constraint violation) halfway through saving, it automatically rolls back everything in that specific save call.
+
+When you need an explicit Rollback: You only need to manually handle rollbacks if your Logic layer performs multiple SaveChangesAsync() calls across different repositories or contexts in a single "Action." In that case, you would use an explicit transaction:
+
+C#
+using var transaction = await _context.Database.BeginTransactionAsync();
+try {
+    // ... save multiple things ...
+    await transaction.CommitAsync();
+} catch {
+    await transaction.RollbackAsync();
+}
+For your current CRUD operations, the built-in behavior is sufficient.
+
+2. Editing the Primary Key (EmployeeNumber)
+You are right—editing a Primary Key (PK) is a "pain point" by design. Your approach (Delete + Re-insert) is a common workaround, but it is not the professional standard.
+
+The Professional Approach: The Surrogate Key
+In most enterprise systems, we use a "Surrogate Key" (usually an int ID or Guid) as the Primary Key, and we treat the EmployeeNumber as a Unique Alternate Key.
+
+How it works: Your database table has a column Id (Auto-increment). Your relationships (like Department) point to this Id.
+
+The Benefit: Since the Id never changes, you can safely update the EmployeeNumber text field just like a name or email without breaking any database links.
+
+If you must stick with EmployeeNumber as the PK:
+The "Delete and Re-insert" method works, but it can break Foreign Key relationships. If the Department table or a "SalaryHistory" table points to that EmployeeNumber, deleting the employee will cause a "Cascade Delete" or a "Foreign Key Constraint Error."
+
+Recommendation: Switch your Employee table to use an int Id as the PK and keep EmployeeNumber as a unique string.
+
+3. Formatting the JoinDate (YYYY-MM-DD)
+To handle this, you have to separate how it's stored from how it's transmitted.
+
+A. In the Database/Model
+Keep it as a DateTime or Date type. Databases are bad at storing "formatted strings"; they should store raw data.
+
+B. In the JSON Response (The "YYYY-MM-DD" part)
+You can tell the JSON Serializer exactly how to format that date when it leaves your API. In your EmployeeResponse.cs, add the [JsonConverter] attribute:
+
+C#
+using System.Text.Json.Serialization;
+
+public class EmployeeResponse
+{
+    public string EmployeeNumber { get; set; }
+    
+    [JsonConverter(typeof(DateOnlyJsonConverter))] // Custom converter OR...
+    public DateTime JoinDate { get; set; } 
+}
+The Simpler Way (Manual Formatting in Logic):
+If you don't want to mess with global converters, just change the property type in your EmployeeResponse to a string:
+
+C#
+// In EmployeeResponse.cs
+public string JoinDate { get; set; }
+
+// In EmployeeLogic.cs (Mapping)
+response.JoinDate = employee.JoinDate.ToString("yyyy-MM-dd");
+C. In your Angular Frontend
+Even if the API sends the full ISO string, it is actually better to let Angular handle the display. Angular has a built-in Date Pipe:
+
+HTML
+<td>{{ employee.joinDate | date:'yyyy-MM-dd' }}</td>
+This is the most flexible approach because it allows you to easily change the format to Japanese style (yyyy年MM月dd日) later without touching the backend code.
