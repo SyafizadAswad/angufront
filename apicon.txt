@@ -1,0 +1,69 @@
+Here is a concise walkthrough of how this Angular app is wired to your Employees API. Nothing magic happens in one place; it is a short chain of configuration plus HttpClient and your EmployeeService.
+
+1. Base URL the app uses (/api)
+File: src/environments/environment.development.ts
+
+export const environment = {
+  production: false,
+  apiBaseUrl: '/api',
+};
+When you run ng serve with the development build, Angular replaces environment.ts with this file. Every HTTP call is built from environment.apiBaseUrl, so from the browser’s point of view the API “lives” at the same host and port as the dev server (http://localhost:4200/api/...). That avoids CORS during local development because the page and the request URL share the same origin.
+
+environment.ts (production) is where you would put a full URL to a deployed API later.
+
+2. Dev server: forward /api to ASP.NET
+File: proxy.conf.json (at the project root)
+
+{
+  "/api": {
+    "target": "https://localhost:7065",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
+Meaning: any request whose path starts with /api is proxied to https://localhost:7065 (your EmployeesAPI https port from launchSettings.json).
+
+How Angular picks it up: angular.json → projects.employee-app.architect.serve.options.proxyConfig points at proxy.conf.json. You do not import that JSON from TypeScript; the CLI dev server reads it when you run ng serve.
+
+3. HTTP client is registered once for the whole app
+File: src/app/app.config.ts
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes),
+    provideHttpClient(),
+  ],
+};
+provideHttpClient() registers Angular’s HttpClient, so any injectable (like your employee API service) can call inject(HttpClient) and issue get / post / put / delete.
+
+4. Where the actual API paths are built (no separate “connection” file)
+File: src/app/core/employee.service.ts
+
+That service:
+
+Injects HttpClient
+Reads environment.apiBaseUrl (so /api in dev)
+Appends the resource segment your controller uses, e.g. /employees, which together match https://localhost:7065/api/employees once the proxy forwards /api to the API root
+Components (list, form) inject EmployeeService and call getAll(), getByEmployeeNumber(), etc. They do not talk to HttpClient or the proxy directly.
+
+5. What was “created” vs what was already there
+For connecting to the backend, the usual pieces are:
+
+Piece	Role
+environment.development.ts
+Says “use /api as the API root in dev”
+proxy.conf.json
+Says “/api on the dev server goes to Kestrel”
+angular.json
+References proxy.conf.json for ng serve
+app.config.ts
+Enables HttpClient
+employee.service.ts
+Builds URLs and performs HTTP calls
+We did not add a separate “connector” library; the link is env + proxy + HttpClient + service. What we changed over time was mainly the proxy target port (to match EmployeesAPI) and DTO alignment (so the JSON shape matches your models), not the overall connection pattern.
+
+6. Mental model in one sentence
+In dev: browser → localhost:4200/api/... → Angular dev server proxy → https://localhost:7065/api/... (EmployeesAPI). In production you would typically drop the proxy and set apiBaseUrl to whatever public URL serves your API (often still with an /api prefix if that is how you host it).
+
+If you want a follow-up, we can do the same walkthrough for production (build output + hosting next to the API or behind a reverse proxy).
