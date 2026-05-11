@@ -1,0 +1,43 @@
+<section class="panel">
+  <header class="panel__header">
+    <h2>Employees</h2>
+    <a routerLink="/employees/new" class="btn btn--primary">Add employee</a>
+  </header>
+
+  @if (loading()) {
+    <p class="muted">Loading…</p>
+  } @else if (error()) {
+    <p class="error">{{ error() }}</p>
+    <button type="button" class="btn" (click)="load()">Retry</button>
+  } @else if (employees().length === 0) {
+    <p class="muted">No employees yet.</p>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Joined</th>
+            <th>Department</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (emp of employees(); track emp.employeeNumber) {
+            <tr>
+              <td>{{ emp.employeeName }}</td>
+              <td>{{ emp.mailAddress || '—' }}</td>
+              <td>{{ joinDateLabel(emp) }}</td>
+              <td>{{ emp.deparmentName ?? '—' }}</td>
+              <td class="actions">
+                <a [routerLink]="['/employees', emp.employeeNumber, 'edit']" class="btn btn--ghost">Edit</a>
+                <button type="button" class="btn btn--danger" (click)="remove(emp)">Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

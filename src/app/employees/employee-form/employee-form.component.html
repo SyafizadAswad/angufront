@@ -1,0 +1,59 @@
+<section class="panel">
+  <header class="panel__header">
+    <h2>{{ isEdit ? 'Edit employee' : 'New employee' }}</h2>
+    <a routerLink="/employees" class="btn btn--ghost">Back to list</a>
+  </header>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+    <label>
+      <span>Employee number</span>
+      <input type="text" formControlName="employeeNumber" autocomplete="off" maxlength="7" />
+      @if (form.controls.employeeNumber.touched && form.controls.employeeNumber.invalid) {
+        <small class="field-error">Required, max 7 characters</small>
+      }
+    </label>
+
+    <label>
+      <span>Name</span>
+      <input type="text" formControlName="employeeName" autocomplete="name" />
+      @if (form.controls.employeeName.touched && form.controls.employeeName.invalid) {
+        <small class="field-error">Required, max 100 characters</small>
+      }
+    </label>
+
+    <label>
+      <span>Join date</span>
+      <input type="date" formControlName="joinDate" />
+      @if (form.controls.joinDate.touched && form.controls.joinDate.invalid) {
+        <small class="field-error">Required</small>
+      }
+    </label>
+
+    <label>
+      <span>Department ID</span>
+      <input type="number" formControlName="departmentId" min="0" step="1" />
+      @if (form.controls.departmentId.touched && form.controls.departmentId.invalid) {
+        <small class="field-error">Required</small>
+      }
+    </label>
+
+    <label>
+      <span>Email</span>
+      <input type="email" formControlName="mailAddress" autocomplete="email" />
+      @if (form.controls.mailAddress.touched && form.controls.mailAddress.invalid) {
+        <small class="field-error">Valid email if provided</small>
+      }
+    </label>
+
+    <div class="form__actions">
+      <button type="button" class="btn btn--ghost" (click)="cancel()" [disabled]="saving()">Cancel</button>
+      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </button>
+    </div>
+  </form>
+</section>
