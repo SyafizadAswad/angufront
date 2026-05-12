@@ -1,14 +1,38 @@
 <section class="panel">
   <header class="panel__header">
     <h2>Employees</h2>
-    <a routerLink="/employees/new" class="btn btn--primary">Add employee</a>
+    <div class="panel__actions">
+      <div class="search-row">
+        <label class="sr-only" for="employee-number-search">Employee number</label>
+        <input
+          id="employee-number-search"
+          type="search"
+          class="search-row__input"
+          placeholder="Employee number"
+          maxlength="7"
+          autocomplete="off"
+          [value]="employeeNumberSearch"
+          (input)="onSearchInput($event)"
+          (keydown.enter)="searchByEmployeeNumber()"
+        />
+        <button type="button" class="btn" (click)="searchByEmployeeNumber()">Search</button>
+        @if (searchActive()) {
+          <button type="button" class="btn btn--ghost" (click)="clearSearch()">Show all</button>
+        }
+      </div>
+      <a routerLink="/employees/new" class="btn btn--primary">Add employee</a>
+    </div>
   </header>
 
   @if (loading()) {
     <p class="muted">Loading…</p>
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
-    <button type="button" class="btn" (click)="load()">Retry</button>
+    @if (notFoundError()) {
+      <button type="button" class="btn" (click)="clearSearch()">View all employees</button>
+    } @else {
+      <button type="button" class="btn" (click)="load()">Retry</button>
+    }
   } @else if (employees().length === 0) {
     <p class="muted">No employees yet.</p>
   } @else {
