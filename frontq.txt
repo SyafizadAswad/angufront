@@ -1,0 +1,104 @@
+Those calls are Angular writable signals (signal(...)). On a writable signal, .set(value) replaces the current value and notifies anything that reads the signal (for example the template) so the UI updates.
+
+Here is what each signal represents and what .set is doing in this component:
+
+searchActive.set(...)
+Tracks whether the list is showing search results (one employee from getByEmployeeNumber) versus the full list from getAll(). The comment on line 19 says the table is in “single row from search” mode when this is true.
+
+false in load() and after failed search / clear — back to normal list mode.
+true in searchByEmployeeNumber() success — table shows that one match.
+notFoundError.set(...)
+A boolean flag used to distinguish a 404 “no employee” case from other errors (see httpStatus(err) === 404). When true, the UI can show a dedicated “not found” treatment if the template uses it.
+
+Cleared at the start of load(), searchByEmployeeNumber(), and clearSearch().
+Set true when the API returns 404 for the search.
+loading.set(...)
+In-flight request indicator.
+
+true before starting getAll() or getByEmployeeNumber().
+false when the request finishes in next or error so spinners / disabled states can stop.
+error.set(...)
+Holds a user-visible error message (string | null).
+
+null clears the message when starting a fresh load or search.
+A string is set from describeError(err) or the fixed “No employee found…” message on 404.
+Summary: .set is not a special framework hook—it is simply how you update each signal’s value so the component (and template) react to loading state, errors, search mode, and the not-found case.
+
+=======
+
+Here is what was added in employee-form.component.ts:
+
+Piece	Role
+editingEmployeeNumber
+null = create (new employee). Non-null = edit (that employee’s number from the route).
+
+isEdit getter
+Exposes whether you are in edit mode (route had :employeeNumber).
+
+ngOnInit
+Edit: reads employeeNumber from the route, disables that control, loads the employee. Create: no param, form stays defaults.
+
+submit
+Create: employeesApi.create when editingEmployeeNumber === null. Edit: employeesApi.update with that number. Both navigate to /employees on success.
+
+cancel
+Navigates back to the list; does not save.
+
+patchFromEmployee
+Edit only: maps loaded Employee into the form.
+
+todayIsoDate
+Default / fallback join date (not create vs edit by itself).
+
+fail
+Shared handler when create/update HTTP calls fail.
+
+describeError
+Builds the string shown in the error signal.
+
+Comments are JSDoc-style on the field and above each method so you can jump to them in the editor. No new linter issues were reported for that file.
+
+===============
+
+What was added
+employee-form.component.ts — removing signal and remove() (edit only): confirm → EmployeeService.delete → on success navigate(['/employees']); errors use the same path as save via fail().
+
+employee-form.component.html — A Delete employee button (danger style), only when isEdit; Cancel/Save/Delete are disabled while save or delete is in flight.
+
+employee-form.component.scss — form__actions keeps Delete on the left (margin-inline-end: auto) and Cancel/Save on the right.
+
+employee-list.component.ts — A pageshow listener: when the list is restored from the back/forward cache (event.persisted === true), it calls load() again so the table is not stuck on an old snapshot.
+
+Why the list sometimes did not update
+Browsers can put the list route back into the back/forward cache (bfcache) when you leave /employees for /employees/.../edit. If you later return with the browser Back button (or in some cases when the list is restored without a full fresh navigation), Angular may not run ngOnInit again; the tab can show the cached DOM and in-memory state, so the deleted row can still appear even though the server is correct. That matches “sometimes” and “DB is already updated.”
+
+Using router.navigate(['/employees']) after delete usually creates a new list instance and ngOnInit runs, which is why it often worked. The pageshow + load() fix covers the bfcache restore path.
+
+Why you can still see a 404
+Typical cases:
+
+History still points at the edit URL — After delete, if you (or the browser) go back to /employees/{number}/edit, getByEmployeeNumber runs again for a row that no longer exists → 404 on that GET. The DELETE can still be 2xx in the same session.
+
+Network tab order — You might see DELETE 204/200 and a separate GET …/employees/{id} returning 404; that does not mean delete failed.
+
+Search on the list — A GET by number after the employee was removed also returns 404 (your list already handles that in searchByEmployeeNumber).
+
+Check the exact URL of the 404 request in DevTools to see which of these it is.
+
+==========
+
+ode change
+EmployeeFormComponent now subscribes to this.route.paramMap in the constructor (with takeUntilDestroyed() so it unsubscribes when the component is destroyed). The pipe uses switchMap so when the URL changes quickly, the previous getByEmployeeNumber request is cancelled and only the latest route drives the UI.
+
+No employeeNumber param (e.g. /employees/new) → resetToCreate(): editingEmployeeNumber = null, enable the number field, form.reset(...), clear errors.
+Has employeeNumber (e.g. /employees/123/edit) → set edit mode, disable the number field, fetch and patchFromEmployee.
+Field declarations (form, signals, …) are above the constructor so resetToCreate() never runs before this.form exists.
+
+What is route.paramMap?
+ActivatedRoute is the Angular service for the route that activated this component. Its paramMap is an RxJS Observable of route parameters (the parts of the path like :employeeNumber from your route config).
+
+paramMap.get('employeeNumber') returns the string for that segment, or null if this URL does not define it (your new route has no :employeeNumber).
+It emits again whenever the user navigates to another URL that still uses this same component but with different params (or from new → edit and back). That is why it fixes reuse: snapshot.paramMap only reflects the first navigation; paramMap keeps updating.
+So: paramMap = live stream of route path parameters for the current route; snapshot.paramMap = one-time read at the moment you read it (fine when the component is always destroyed between visits, not enough when Angular reuses the same component instance).
+
+

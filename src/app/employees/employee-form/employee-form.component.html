@@ -50,8 +50,15 @@
     </label>
 
     <div class="form__actions">
-      <button type="button" class="btn btn--ghost" (click)="cancel()" [disabled]="saving()">Cancel</button>
-      <button type="submit" class="btn btn--primary" [disabled]="saving()">
+      @if (isEdit) {
+        <button type="button" class="btn btn--danger" (click)="remove()" [disabled]="saving() || removing()">
+          {{ removing() ? 'Deleting…' : 'Delete employee' }}
+        </button>
+      }
+      <button type="button" class="btn btn--ghost" (click)="cancel()" [disabled]="saving() || removing()">
+        Cancel
+      </button>
+      <button type="submit" class="btn btn--primary" [disabled]="saving() || removing()">
         {{ saving() ? 'Saving…' : 'Save' }}
       </button>
     </div>

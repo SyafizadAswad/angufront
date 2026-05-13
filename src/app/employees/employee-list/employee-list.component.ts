@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Employee } from '../../core/employee.model';
@@ -12,6 +12,14 @@ import { EmployeeService } from '../../core/employee.service';
 })
 export class EmployeeListComponent implements OnInit {
   private readonly employeesApi = inject(EmployeeService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** When `true`, `pageshow` came from the back/forward cache — reload so the table is not stale. */
+  private readonly onPageShow = (event: PageTransitionEvent): void => {
+    if (event.persisted) {
+      this.load();
+    }
+  };
 
   readonly employees = signal<Employee[]>([]);
   readonly loading = signal(false);
@@ -30,6 +38,8 @@ export class EmployeeListComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    window.addEventListener('pageshow', this.onPageShow);
+    this.destroyRef.onDestroy(() => window.removeEventListener('pageshow', this.onPageShow));
   }
 
   joinDateLabel(emp: Employee): string {
