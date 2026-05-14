@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { Employee } from '../../core/employee.model';
 import { EmployeeService } from '../../core/employee.service';
+import { getApiErrorMessage } from '../../core/api-error-message';
 
 export type EmployeeSortKey =
   | 'number-asc'
@@ -134,7 +135,9 @@ export class EmployeeListComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err: unknown) => {
-        this.error.set(this.describeError(err));
+        this.error.set(
+          getApiErrorMessage(err, 'Request failed. Check API URL, CORS, and that the backend is running.'),
+        );
         this.loading.set(false);
       },
     });
@@ -165,7 +168,9 @@ export class EmployeeListComponent implements OnInit {
           this.searchActive.set(false);
           return;
         }
-        this.error.set(this.describeError(err));
+        this.error.set(
+          getApiErrorMessage(err, 'Request failed. Check API URL, CORS, and that the backend is running.'),
+        );
         this.searchActive.set(false);
       },
     });
@@ -193,14 +198,10 @@ export class EmployeeListComponent implements OnInit {
     }
     this.employeesApi.delete(emp.employeeNumber).subscribe({
       next: () => this.load(),
-      error: (err: unknown) => this.error.set(this.describeError(err)),
+      error: (err: unknown) =>
+        this.error.set(
+          getApiErrorMessage(err, 'Request failed. Check API URL, CORS, and that the backend is running.'),
+        ),
     });
-  }
-
-  private describeError(err: unknown): string {
-    if (err && typeof err === 'object' && 'message' in err) {
-      return String((err as { message?: string }).message ?? err);
-    }
-    return 'Request failed. Check API URL, CORS, and that the backend is running.';
   }
 }

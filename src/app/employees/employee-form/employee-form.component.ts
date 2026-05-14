@@ -10,6 +10,7 @@ import { catchError, map, of, switchMap, tap } from 'rxjs';
 
 import { Employee, EmployeeRequest } from '../../core/employee.model';
 import { EmployeeService } from '../../core/employee.service';
+import { getApiErrorMessage } from '../../core/api-error-message';
 
 @Component({
   selector: 'app-employee-form',
@@ -59,7 +60,12 @@ export class EmployeeFormComponent {
             tap((emp) => this.patchFromEmployee(emp)),
             map(() => undefined),
             catchError((err: unknown) => {
-              this.error.set(this.describeError(err));
+              this.error.set(
+                getApiErrorMessage(
+                  err,
+                  'Could not load employee. Check API URL and that the record exists.',
+                ),
+              );
               return of(undefined);
             }),
           );
@@ -173,14 +179,8 @@ export class EmployeeFormComponent {
   /** Shared error path for create/update HTTP failures. */
   private fail(err: unknown): void {
     this.saving.set(false);
-    this.error.set(this.describeError(err));
-  }
-
-  /** Turn API/unknown errors into a short message for `error` signal. */
-  private describeError(err: unknown): string {
-    if (err && typeof err === 'object' && 'message' in err) {
-      return String((err as { message?: string }).message ?? err);
-    }
-    return 'Could not save. Check API URL and payload shape vs your DTO.';
+    this.error.set(
+      getApiErrorMessage(err, 'Could not save. Check API URL and payload shape vs your DTO.'),
+    );
   }
 }
