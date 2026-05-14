@@ -1,8 +1,16 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Employee } from '../../core/employee.model';
 import { EmployeeService } from '../../core/employee.service';
+
+export type EmployeeSortKey =
+  | 'number-asc'
+  | 'number-desc'
+  | 'name-az'
+  | 'join-asc'
+  | 'join-desc'
+  | 'department-az';
 
 @Component({
   selector: 'app-employee-list',
@@ -31,6 +39,63 @@ export class EmployeeListComponent implements OnInit {
   /** Bound from the search box; not a signal so template binding stays simple. */
   employeeNumberSearch = '';
 
+  readonly sortKey = signal<EmployeeSortKey>('number-asc');
+
+  readonly sortedEmployees = computed(() => {
+    const rows = [...this.employees()];
+    const key = this.sortKey();
+    const cmpNum = (a: Employee, b: Employee) =>
+      a.employeeNumber.localeCompare(b.employeeNumber, undefined, { numeric: true });
+    const joinSort = (a: Employee, b: Employee) => {
+      const sa = (a.joinDate ?? '').slice(0, 10);
+      const sb = (b.joinDate ?? '').slice(0, 10);
+      return sa.localeCompare(sb);
+    };
+    const dept = (a: Employee, b: Employee) =>
+      (a.deparmentName ?? '').localeCompare(b.deparmentName ?? '', undefined, {
+        sensitivity: 'base',
+      });
+
+    switch (key) {
+      case 'number-asc':
+        rows.sort(cmpNum);
+        break;
+      case 'number-desc':
+        rows.sort((a, b) => cmpNum(b, a));
+        break;
+      case 'name-az':
+        rows.sort((a, b) =>
+          a.employeeName.localeCompare(b.employeeName, undefined, { sensitivity: 'base' }),
+        );
+        break;
+      case 'join-asc':
+        rows.sort(joinSort);
+        break;
+      case 'join-desc':
+        rows.sort((a, b) => joinSort(b, a));
+        break;
+      case 'department-az':
+        rows.sort(dept);
+        break;
+    }
+    return rows;
+  });
+
+  onSortChange(event: Event): void {
+    const el = event.target as HTMLSelectElement | null;
+    const v = el?.value as EmployeeSortKey | undefined;
+    if (
+      v === 'number-asc' ||
+      v === 'number-desc' ||
+      v === 'name-az' ||
+      v === 'join-asc' ||
+      v === 'join-desc' ||
+      v === 'department-az'
+    ) {
+      this.sortKey.set(v);
+    }
+  }
+
   onSearchInput(event: Event): void {
     const el = event.target as HTMLInputElement | null;
     this.employeeNumberSearch = el?.value ?? '';
@@ -51,6 +116,11 @@ export class EmployeeListComponent implements OnInit {
       return d.slice(0, 10);
     }
     return d || '—';
+  }
+
+  /** Heuristic: only show the hover “full name” bubble when the label is likely truncated or very long. */
+  showNameHoverTip(name: string): boolean {
+    return name.trim().length >= 22;
   }
 
   load(): void {

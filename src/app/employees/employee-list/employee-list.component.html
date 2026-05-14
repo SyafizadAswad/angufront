@@ -20,6 +20,22 @@
           <button type="button" class="btn btn--ghost" (click)="clearSearch()">Show all</button>
         }
       </div>
+      <div class="sort-row">
+        <label for="employee-sort" class="sort-row__label">Sort</label>
+        <select
+          id="employee-sort"
+          class="sort-row__select"
+          [value]="sortKey()"
+          (change)="onSortChange($event)"
+        >
+          <option value="number-asc">Employee number (low → high)</option>
+          <option value="number-desc">Employee number (high → low)</option>
+          <option value="name-az">Name (A–Z)</option>
+          <option value="join-asc">Join date (oldest first)</option>
+          <option value="join-desc">Join date (newest first)</option>
+          <option value="department-az">Department (A–Z)</option>
+        </select>
+      </div>
       <a routerLink="/employees/new" class="btn btn--primary">Add employee</a>
     </div>
   </header>
@@ -48,9 +64,15 @@
           </tr>
         </thead>
         <tbody>
-          @for (emp of employees(); track emp.employeeNumber) {
+          @for (emp of sortedEmployees(); track emp.employeeNumber) {
             <tr>
-              <td>{{ emp.employeeName }}</td>
+              <td class="name-td">
+                @if (showNameHoverTip(emp.employeeName)) {
+                  <span class="name-cell name-cell--tip" [attr.data-full]="emp.employeeName">{{ emp.employeeName }}</span>
+                } @else {
+                  <span class="name-cell">{{ emp.employeeName }}</span>
+                }
+              </td>
               <td>{{ emp.mailAddress || '—' }}</td>
               <td>{{ joinDateLabel(emp) }}</td>
               <td>{{ emp.deparmentName ?? '—' }}</td>
