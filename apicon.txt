@@ -1,69 +1,53 @@
-Here is a concise walkthrough of how this Angular app is wired to your Employees API. Nothing magic happens in one place; it is a short chain of configuration plus HttpClient and your EmployeeService.
+What was added
+File	Role
+src/app/auth/login/login.component.*
+Login form (username + password)
 
-1. Base URL the app uses (/api)
-File: src/environments/environment.development.ts
+src/app/core/auth.model.ts
+Request/response types + token extraction
 
-export const environment = {
-  production: false,
-  apiBaseUrl: '/api',
-};
-When you run ng serve with the development build, Angular replaces environment.ts with this file. Every HTTP call is built from environment.apiBaseUrl, so from the browser’s point of view the API “lives” at the same host and port as the dev server (http://localhost:4200/api/...). That avoids CORS during local development because the page and the request URL share the same origin.
+src/app/core/auth.service.ts
+login, logout, token in localStorage
 
-environment.ts (production) is where you would put a full URL to a deployed API later.
+src/app/core/auth.interceptor.ts
+Sends Authorization: Bearer … on API calls
 
-2. Dev server: forward /api to ASP.NET
-File: proxy.conf.json (at the project root)
+src/app/core/auth.guard.ts
+authGuard / guestGuard
 
-{
-  "/api": {
-    "target": "https://localhost:7065",
-    "secure": false,
-    "changeOrigin": true
-  }
-}
-Meaning: any request whose path starts with /api is proxied to https://localhost:7065 (your EmployeesAPI https port from launchSettings.json).
+environment.*
+authLoginPath: '/auth/login'
 
-How Angular picks it up: angular.json → projects.employee-app.architect.serve.options.proxyConfig points at proxy.conf.json. You do not import that JSON from TypeScript; the CLI dev server reads it when you run ng serve.
+Routes: /login (guest only), /employees/* (requires login). Log out appears in the header when signed in.
 
-3. HTTP client is registered once for the whole app
-File: src/app/app.config.ts
+Default login URL: POST /api/auth/login with body { "username": "...", "password": "..." }.
+If your API differs, change authLoginPath in environment.development.ts (e.g. /Auth/login) and/or the LoginRequest fields in auth.model.ts.
 
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
-    provideHttpClient(),
-  ],
-};
-provideHttpClient() registers Angular’s HttpClient, so any injectable (like your employee API service) can call inject(HttpClient) and issue get / post / put / delete.
+Token in response: first non-empty of token, accessToken, or access_token. Add another property in extractAccessToken if your API uses a different name.
 
-4. Where the actual API paths are built (no separate “connection” file)
-File: src/app/core/employee.service.ts
+Other PC API: set apiBaseUrl in environment.development.ts to that host (e.g. http://192.168.x.x:7065/api) and ensure CORS allows your Angular origin, or point proxy.conf.json target at that machine when using ng serve.
 
-That service:
 
-Injects HttpClient
-Reads environment.apiBaseUrl (so /api in dev)
-Appends the resource segment your controller uses, e.g. /employees, which together match https://localhost:7065/api/employees once the proxy forwards /api to the API root
-Components (list, form) inject EmployeeService and call getAll(), getByEmployeeNumber(), etc. They do not talk to HttpClient or the proxy directly.
+Login page (/login)
+Reactive form posts to AuthService.login(), which calls POST {apiBaseUrl}{authLoginPath} (default /api/auth/login).
+On success, the JWT is stored in localStorage under auth_access_token, and isAuthenticated is set to true.
+Errors use getApiErrorMessage() so your backend exception text is shown.
 
-5. What was “created” vs what was already there
-For connecting to the backend, the usual pieces are:
+Route guards
 
-Piece	Role
-environment.development.ts
-Says “use /api as the API root in dev”
-proxy.conf.json
-Says “/api on the dev server goes to Kestrel”
-angular.json
-References proxy.conf.json for ng serve
-app.config.ts
-Enables HttpClient
-employee.service.ts
-Builds URLs and performs HTTP calls
-We did not add a separate “connector” library; the link is env + proxy + HttpClient + service. What we changed over time was mainly the proxy target port (to match EmployeesAPI) and DTO alignment (so the JSON shape matches your models), not the overall connection pattern.
+authGuard: employee routes check for a stored token; if missing → redirect to /login.
+guestGuard: if you already have a token → redirect to /employees (so you do not see login again while logged in).
+HTTP interceptor (authInterceptor)
+For requests to your API (URLs under /api or apiBaseUrl), it adds:
+Authorization: Bearer <token>
+Login is excluded so the first request does not send an old token.
+On 401 from a protected call, it clears the token and sends you to /login.
 
-6. Mental model in one sentence
-In dev: browser → localhost:4200/api/... → Angular dev server proxy → https://localhost:7065/api/... (EmployeesAPI). In production you would typically drop the proxy and set apiBaseUrl to whatever public URL serves your API (often still with an /api prefix if that is how you host it).
+Logout
+Header Log out calls AuthService.logout() → removes token, sets isAuthenticated to false, navigates to /login.
 
-If you want a follow-up, we can do the same walkthrough for production (build output + hosting next to the API or behind a reverse proxy).
+Persistence
+Refreshing the page keeps the token in localStorage, so authGuard still allows access until you log out or the API returns 401 (expired/invalid token).
+
+You do not duplicate JWT logic on the frontend beyond storing the string and attaching it; validation stays on the backend.
+
