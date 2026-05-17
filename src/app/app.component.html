@@ -1,6 +1,9 @@
 <div class="app">
   <header class="app__header">
     <a routerLink="/employees" class="brand">{{ title }}</a>
+    @if (auth.isAuthenticated()) {
+      <button type="button" class="btn btn--ghost" (click)="logout()">Log out</button>
+    }
   </header>
   <main class="app__main">
     <router-outlet />

@@ -7,4 +7,5 @@
 export const environment = {
   production: true,
   apiBaseUrl: 'https://YOUR_PRODUCTION_API_HOST/api',
+  authLoginPath: '/auth/login',
 };

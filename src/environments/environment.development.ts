@@ -7,4 +7,6 @@
 export const environment = {
   production: false,
   apiBaseUrl: '/api',
+  /** POST target for JWT login, appended to `apiBaseUrl` (e.g. `/api` + `/auth/login`). */
+  authLoginPath: '/auth/login',
 };
