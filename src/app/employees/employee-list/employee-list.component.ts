@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 
 import { Employee } from '../../core/employee.model';
 import { EmployeeService } from '../../core/employee.service';
+import { GaugeComponent } from '../../gauge-test/gauge-test.component';
 import { getApiErrorMessage } from '../../core/api-error-message';
 
 export type EmployeeSortKey =
@@ -15,7 +16,7 @@ export type EmployeeSortKey =
 
 @Component({
   selector: 'app-employee-list',
-  imports: [RouterLink],
+  imports: [RouterLink, GaugeComponent],
   templateUrl: './employee-list.component.html',
   styleUrl: './employee-list.component.scss',
 })

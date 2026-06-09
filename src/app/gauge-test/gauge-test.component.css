@@ -1,0 +1,44 @@
+.gauge-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: sans-serif;
+}
+
+/* The background container column */
+.gauge-track {
+  width: 30px;
+  height: 200px;
+  background-color: #e2e8f0; /* Light gray track */
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* The actual fluid bar inside */
+.gauge-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  
+  /* Takes the 0-100 value and converts it to a percentage height */
+  height: calc(var(--gauge-val, 0) * 1%); 
+  
+  /* Applies the dynamic color from Angular */
+  background-color: var(--gauge-clr, #10b981);
+  
+  /* This creates the smooth rising/falling and color shifting animation */
+  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+  
+  border-radius: inherit;
+}
+
+/* Label Styling */
+.gauge-label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #334155;
+}

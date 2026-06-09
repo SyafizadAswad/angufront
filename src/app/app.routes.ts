@@ -7,21 +7,21 @@ import { EmployeeListComponent } from './employees/employee-list/employee-list.c
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'employees' },
-  { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
+  { path: 'login', component: LoginComponent },
   {
     path: 'employees',
     component: EmployeeListComponent,
-    canActivate: [authGuard],
+    // canActivate: [authGuard],
   },
   {
     path: 'employees/new',
     component: EmployeeFormComponent,
-    canActivate: [authGuard],
+    // canActivate: [authGuard],
   },
   {
     path: 'employees/:employeeNumber/edit',
     component: EmployeeFormComponent,
-    canActivate: [authGuard],
+    // canActivate: [authGuard],
   },
   { path: '**', redirectTo: 'employees' },
 ];
