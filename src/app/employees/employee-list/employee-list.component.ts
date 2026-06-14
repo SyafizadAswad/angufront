@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import {
   NonNullableFormBuilder,
   ReactiveFormsModule,
@@ -53,6 +53,8 @@ export class EmployeeListComponent implements OnInit {
   readonly editingEmployeeNumber = signal<string | null>(null);
   readonly savingEdit = signal(false);
   readonly editRowError = signal<string | null>(null);
+  /** Which row’s actions dropdown is open (`employeeNumber`), or `null`. */
+  readonly openActionsMenu = signal<string | null>(null);
 
   readonly editForm = this.fb.group({
     employeeName: this.fb.control('', {
@@ -153,6 +155,39 @@ export class EmployeeListComponent implements OnInit {
     return this.editingEmployeeNumber() === null && !this.savingEdit();
   }
 
+  isActionsMenuOpen(emp: Employee): boolean {
+    return this.openActionsMenu() === emp.employeeNumber;
+  }
+
+  toggleActionsMenu(employeeNumber: string, event: Event): void {
+    event.stopPropagation();
+    if (!this.canStartEdit()) {
+      return;
+    }
+    this.openActionsMenu.set(
+      this.openActionsMenu() === employeeNumber ? null : employeeNumber,
+    );
+  }
+
+  closeActionsMenu(): void {
+    this.openActionsMenu.set(null);
+  }
+
+  onMenuEdit(emp: Employee): void {
+    this.closeActionsMenu();
+    this.startEdit(emp);
+  }
+
+  onMenuDelete(emp: Employee): void {
+    this.closeActionsMenu();
+    this.remove(emp);
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.closeActionsMenu();
+  }
+
   startEdit(emp: Employee): void {
     if (!this.canStartEdit()) {
       return;
@@ -173,6 +208,7 @@ export class EmployeeListComponent implements OnInit {
     if (this.savingEdit()) {
       return;
     }
+    this.closeActionsMenu();
     this.editingEmployeeNumber.set(null);
     this.editRowError.set(null);
     this.editForm.reset({

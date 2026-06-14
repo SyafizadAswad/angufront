@@ -142,22 +142,39 @@
                 <td>{{ joinDateLabel(emp) }}</td>
                 <td>{{ emp.deparmentName ?? '—' }}</td>
                 <td class="actions">
-                  <button
-                    type="button"
-                    class="btn btn--ghost"
-                    (click)="startEdit(emp)"
-                    [disabled]="!canStartEdit()"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn--danger"
-                    (click)="remove(emp)"
-                    [disabled]="!canStartEdit()"
-                  >
-                    Delete
-                  </button>
+                  <div class="row-actions" [class.row-actions--open]="isActionsMenuOpen(emp)">
+                    <button
+                      type="button"
+                      class="btn btn--ghost row-actions__trigger"
+                      (click)="toggleActionsMenu(emp.employeeNumber, $event)"
+                      [disabled]="!canStartEdit()"
+                      [attr.aria-expanded]="isActionsMenuOpen(emp)"
+                      aria-haspopup="menu"
+                    >
+                      Actions
+                      <span class="row-actions__chevron" aria-hidden="true">▾</span>
+                    </button>
+                    @if (isActionsMenuOpen(emp)) {
+                      <div class="row-actions__menu" role="menu" (click)="$event.stopPropagation()">
+                        <button
+                          type="button"
+                          class="row-actions__item"
+                          role="menuitem"
+                          (click)="onMenuEdit(emp)"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          class="row-actions__item row-actions__item--danger"
+                          role="menuitem"
+                          (click)="onMenuDelete(emp)"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    }
+                  </div>
                 </td>
               </tr>
             }

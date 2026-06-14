@@ -1,0 +1,57 @@
+<section class="panel">
+  <header class="panel__header">
+    <div>
+      <h2>{{ employeeName }} — performance</h2>
+      <p class="panel__lead">
+        Mock history in the component; gauge and highlight use the latest day only.
+      </p>
+    </div>
+    <a routerLink="/employees" class="btn btn--ghost">Back to list</a>
+  </header>
+
+  @if (latestRecord(); as latest) {
+    <section class="latest-block" aria-labelledby="latest-heading">
+      <h3 id="latest-heading" class="section-title">Latest performance</h3>
+      <p class="latest-block__day">{{ formatDay(latest.day) }}</p>
+      <div class="latest-block__gauge">
+        <app-gauge [value]="latestPerformancePercent()" />
+      </div>
+    </section>
+  }
+
+  <section class="history-block" aria-labelledby="history-heading">
+    <h3 id="history-heading" class="section-title">All records</h3>
+
+    @if (allRecordsSorted().length === 0) {
+      <p class="muted">No performance records.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Performance</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of allRecordsSorted(); track row.day) {
+              <tr [class.row--latest]="isLatestDay(row.day)">
+                <td>
+                  {{ formatDay(row.day) }}
+                  @if (isLatestDay(row.day)) {
+                    <span class="latest-badge">Latest</span>
+                  }
+                </td>
+                <td>
+                  <span class="perf" [class.perf--high]="row.performancePercent >= 70">{{
+                    formatPerformance(row.performancePercent)
+                  }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

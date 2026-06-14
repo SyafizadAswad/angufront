@@ -4,10 +4,15 @@ import { LoginComponent } from './auth/login/login.component';
 import { authGuard, guestGuard } from './core/auth.guard';
 import { EmployeeFormComponent } from './employees/employee-form/employee-form.component';
 import { EmployeeListComponent } from './employees/employee-list/employee-list.component';
+import { EmployeePerformanceComponent } from './mock/employee-performance/employee-performance.component';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'employees' },
   { path: 'login', component: LoginComponent },
+  {
+    path: 'mock/tanaka-performance',
+    component: EmployeePerformanceComponent,
+  },
   {
     path: 'employees',
     component: EmployeeListComponent,
