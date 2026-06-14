@@ -143,4 +143,53 @@ th {
   gap: 0.5rem;
   justify-content: flex-end;
   white-space: nowrap;
+  flex-wrap: wrap;
+}
+
+.row--editing {
+  background: #f8fafc;
+
+  td {
+    vertical-align: middle;
+  }
+}
+
+.row--edit-error td {
+  padding-top: 0;
+  border-bottom: 1px solid var(--border);
+  background: #fef2f2;
+}
+
+.row-edit__error {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.row-edit__number {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+.cell-input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.cell-input--narrow {
+  max-width: 5.5rem;
+}
+
+.cell-input:focus {
+  outline: 2px solid rgb(37 99 235 / 0.25);
+  border-color: var(--primary);
 }

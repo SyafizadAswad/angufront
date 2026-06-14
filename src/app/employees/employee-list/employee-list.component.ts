@@ -1,7 +1,12 @@
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
-import { Employee } from '../../core/employee.model';
+import { Employee, EmployeeRequest } from '../../core/employee.model';
 import { EmployeeService } from '../../core/employee.service';
 import { GaugeComponent } from '../../gauge-test/gauge-test.component';
 import { getApiErrorMessage } from '../../core/api-error-message';
@@ -16,11 +21,12 @@ export type EmployeeSortKey =
 
 @Component({
   selector: 'app-employee-list',
-  imports: [RouterLink, GaugeComponent],
+  imports: [RouterLink, ReactiveFormsModule, GaugeComponent],
   templateUrl: './employee-list.component.html',
   styleUrl: './employee-list.component.scss',
 })
 export class EmployeeListComponent implements OnInit {
+  private readonly fb = inject(NonNullableFormBuilder);
   private readonly employeesApi = inject(EmployeeService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -42,6 +48,20 @@ export class EmployeeListComponent implements OnInit {
   employeeNumberSearch = '';
 
   readonly sortKey = signal<EmployeeSortKey>('number-asc');
+
+  /** Employee number of the row currently in inline edit mode. */
+  readonly editingEmployeeNumber = signal<string | null>(null);
+  readonly savingEdit = signal(false);
+  readonly editRowError = signal<string | null>(null);
+
+  readonly editForm = this.fb.group({
+    employeeName: this.fb.control('', {
+      validators: [Validators.required, Validators.maxLength(100)],
+    }),
+    joinDate: this.fb.control('', { validators: [Validators.required] }),
+    departmentId: this.fb.control(0, { validators: [Validators.required] }),
+    mailAddress: this.fb.control('', { validators: [Validators.email] }),
+  });
 
   readonly sortedEmployees = computed(() => {
     const rows = [...this.employees()];
@@ -125,7 +145,77 @@ export class EmployeeListComponent implements OnInit {
     return name.trim().length >= 22;
   }
 
+  isEditing(emp: Employee): boolean {
+    return this.editingEmployeeNumber() === emp.employeeNumber;
+  }
+
+  canStartEdit(): boolean {
+    return this.editingEmployeeNumber() === null && !this.savingEdit();
+  }
+
+  startEdit(emp: Employee): void {
+    if (!this.canStartEdit()) {
+      return;
+    }
+    this.editRowError.set(null);
+    this.editingEmployeeNumber.set(emp.employeeNumber);
+    const join =
+      emp.joinDate && emp.joinDate.length >= 10 ? emp.joinDate.slice(0, 10) : this.todayIsoDate();
+    this.editForm.reset({
+      employeeName: emp.employeeName,
+      joinDate: join,
+      departmentId: emp.departmentId,
+      mailAddress: emp.mailAddress ?? '',
+    });
+  }
+
+  cancelEdit(): void {
+    if (this.savingEdit()) {
+      return;
+    }
+    this.editingEmployeeNumber.set(null);
+    this.editRowError.set(null);
+    this.editForm.reset({
+      employeeName: '',
+      joinDate: this.todayIsoDate(),
+      departmentId: 0,
+      mailAddress: '',
+    });
+  }
+
+  saveEdit(employeeNumber: string): void {
+    if (this.editForm.invalid) {
+      this.editForm.markAllAsTouched();
+      return;
+    }
+    const v = this.editForm.getRawValue();
+    const body: EmployeeRequest = {
+      employeeNumber,
+      employeeName: v.employeeName,
+      joinDate: v.joinDate,
+      departmentId: Number(v.departmentId),
+      mailAddress: v.mailAddress ?? '',
+    };
+
+    this.savingEdit.set(true);
+    this.editRowError.set(null);
+    this.employeesApi.update(employeeNumber, body).subscribe({
+      next: () => {
+        this.savingEdit.set(false);
+        this.editingEmployeeNumber.set(null);
+        this.load();
+      },
+      error: (err: unknown) => {
+        this.savingEdit.set(false);
+        this.editRowError.set(
+          getApiErrorMessage(err, 'Could not save changes. Check API URL and payload shape.'),
+        );
+      },
+    });
+  }
+
   load(): void {
+    this.cancelEdit();
     this.searchActive.set(false);
     this.notFoundError.set(false);
     this.loading.set(true);
@@ -194,6 +284,9 @@ export class EmployeeListComponent implements OnInit {
   }
 
   remove(emp: Employee): void {
+    if (this.isEditing(emp)) {
+      return;
+    }
     if (!confirm(`Delete ${emp.employeeName} (${emp.employeeNumber})?`)) {
       return;
     }
@@ -204,5 +297,9 @@ export class EmployeeListComponent implements OnInit {
           getApiErrorMessage(err, 'Request failed. Check API URL, CORS, and that the backend is running.'),
         ),
     });
+  }
+
+  private todayIsoDate(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 }

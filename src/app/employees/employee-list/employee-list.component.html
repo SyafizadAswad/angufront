@@ -68,22 +68,99 @@
         </thead>
         <tbody>
           @for (emp of sortedEmployees(); track emp.employeeNumber) {
-            <tr>
-              <td class="name-td">
-                @if (showNameHoverTip(emp.employeeName)) {
-                  <span class="name-cell name-cell--tip" [attr.data-full]="emp.employeeName">{{ emp.employeeName }}</span>
-                } @else {
-                  <span class="name-cell">{{ emp.employeeName }}</span>
-                }
-              </td>
-              <td>{{ emp.mailAddress || '—' }}</td>
-              <td>{{ joinDateLabel(emp) }}</td>
-              <td>{{ emp.deparmentName ?? '—' }}</td>
-              <td class="actions">
-                <a [routerLink]="['/employees', emp.employeeNumber, 'edit']" class="btn btn--ghost">Edit</a>
-                <button type="button" class="btn btn--danger" (click)="remove(emp)">Delete</button>
-              </td>
-            </tr>
+            @if (isEditing(emp)) {
+              <tr class="row--editing" [formGroup]="editForm">
+                <td class="name-td">
+                  <span class="row-edit__number">{{ emp.employeeNumber }}</span>
+                  <input
+                    type="text"
+                    class="cell-input"
+                    formControlName="employeeName"
+                    autocomplete="name"
+                    maxlength="100"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="email"
+                    class="cell-input"
+                    formControlName="mailAddress"
+                    autocomplete="email"
+                  />
+                </td>
+                <td>
+                  <input type="date" class="cell-input" formControlName="joinDate" />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="cell-input cell-input--narrow"
+                    formControlName="departmentId"
+                    min="0"
+                    step="1"
+                    title="Department ID"
+                  />
+                </td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn btn--primary"
+                    (click)="saveEdit(emp.employeeNumber)"
+                    [disabled]="savingEdit()"
+                  >
+                    {{ savingEdit() ? 'Saving…' : 'Save' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--ghost"
+                    (click)="cancelEdit()"
+                    [disabled]="savingEdit()"
+                  >
+                    Cancel
+                  </button>
+                </td>
+              </tr>
+              @if (editRowError()) {
+                <tr class="row--edit-error">
+                  <td colspan="5">
+                    <p class="error row-edit__error">{{ editRowError() }}</p>
+                  </td>
+                </tr>
+              }
+            } @else {
+              <tr>
+                <td class="name-td">
+                  @if (showNameHoverTip(emp.employeeName)) {
+                    <span class="name-cell name-cell--tip" [attr.data-full]="emp.employeeName">{{
+                      emp.employeeName
+                    }}</span>
+                  } @else {
+                    <span class="name-cell">{{ emp.employeeName }}</span>
+                  }
+                </td>
+                <td>{{ emp.mailAddress || '—' }}</td>
+                <td>{{ joinDateLabel(emp) }}</td>
+                <td>{{ emp.deparmentName ?? '—' }}</td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn btn--ghost"
+                    (click)="startEdit(emp)"
+                    [disabled]="!canStartEdit()"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--danger"
+                    (click)="remove(emp)"
+                    [disabled]="!canStartEdit()"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>

@@ -20,8 +20,8 @@ export const routes: Routes = [
   },
   {
     path: 'employees/:employeeNumber/edit',
-    component: EmployeeFormComponent,
-    // canActivate: [authGuard],
+    redirectTo: 'employees',
+    pathMatch: 'full',
   },
   { path: '**', redirectTo: 'employees' },
 ];
