@@ -70,6 +70,9 @@ export class EmployeeListComponent implements OnInit {
     () => countVisibleColumns(this.columnVisibility()) + 1,
   );
 
+  /** Data columns only — drives table width / layout classes. */
+  readonly visibleDataColumnCount = computed(() => countVisibleColumns(this.columnVisibility()));
+
   readonly editForm = this.fb.group({
     employeeName: this.fb.control('', {
       validators: [Validators.required, Validators.maxLength(100)],

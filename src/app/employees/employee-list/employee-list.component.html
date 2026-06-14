@@ -56,8 +56,26 @@
   } @else if (employees().length === 0) {
     <p class="muted">No employees yet.</p>
   } @else {
-    <div class="table-wrap">
-      <table>
+    <div
+      class="table-wrap"
+      [attr.data-visible-cols]="visibleDataColumnCount()"
+    >
+      <table class="employee-table">
+        <colgroup>
+          @if (isColumnVisible('name')) {
+            <col class="col-name" />
+          }
+          @if (isColumnVisible('email')) {
+            <col class="col-email" />
+          }
+          @if (isColumnVisible('joined')) {
+            <col class="col-joined" />
+          }
+          @if (isColumnVisible('department')) {
+            <col class="col-department" />
+          }
+          <col class="col-actions" />
+        </colgroup>
         <thead>
           <tr>
             @if (isColumnVisible('name')) {
@@ -72,7 +90,9 @@
             @if (isColumnVisible('department')) {
               <th>Department</th>
             }
-            <th></th>
+            <th class="actions-col" scope="col">
+              <span class="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>

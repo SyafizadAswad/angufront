@@ -80,12 +80,36 @@
 
 .table-wrap {
   overflow-x: auto;
+  width: 100%;
+  max-width: 100%;
+  transition: max-width 0.25s ease;
 }
 
-table {
+.table-wrap[data-visible-cols='1'] {
+  max-width: 30rem;
+}
+
+.table-wrap[data-visible-cols='2'] {
+  max-width: 38rem;
+}
+
+.table-wrap[data-visible-cols='3'] {
+  max-width: 50rem;
+}
+
+.table-wrap[data-visible-cols='4'] {
+  max-width: 62rem;
+}
+
+.employee-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 0.95rem;
+}
+
+.col-actions {
+  width: 11.5rem;
 }
 
 th,
@@ -93,6 +117,10 @@ td {
   text-align: left;
   padding: 0.65rem 0.75rem;
   border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 th {
@@ -103,9 +131,20 @@ th {
   letter-spacing: 0.04em;
 }
 
+.employee-table th.actions-col,
+.employee-table td.actions {
+  width: 11.5rem;
+  min-width: 11.5rem;
+  max-width: 11.5rem;
+  overflow: visible;
+  white-space: nowrap;
+  text-overflow: clip;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
 .name-td {
-  max-width: 14rem;
-  vertical-align: middle;
+  max-width: 0;
 }
 
 .name-cell {
@@ -206,12 +245,17 @@ th {
 .row--editing {
   background: #f8fafc;
 
-  td {
-    vertical-align: middle;
+  td.actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.35rem;
   }
 }
 
 .row--edit-error td {
+  overflow: visible;
+  white-space: normal;
   padding-top: 0;
   border-bottom: 1px solid var(--border);
   background: #fef2f2;
