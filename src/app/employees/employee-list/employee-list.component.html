@@ -39,6 +39,7 @@
           <option value="department-az">Department (A–Z)</option>
         </select>
       </div>
+      <button type="button" class="btn btn--ghost" (click)="openColumnsModal()">Columns</button>
       <a routerLink="/employees/new" class="btn btn--primary">Add employee</a>
     </div>
   </header>
@@ -59,10 +60,18 @@
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Joined</th>
-            <th>Department</th>
+            @if (isColumnVisible('name')) {
+              <th>Name</th>
+            }
+            @if (isColumnVisible('email')) {
+              <th>Email</th>
+            }
+            @if (isColumnVisible('joined')) {
+              <th>Joined</th>
+            }
+            @if (isColumnVisible('department')) {
+              <th>Department</th>
+            }
             <th></th>
           </tr>
         </thead>
@@ -70,37 +79,45 @@
           @for (emp of sortedEmployees(); track emp.employeeNumber) {
             @if (isEditing(emp)) {
               <tr class="row--editing" [formGroup]="editForm">
-                <td class="name-td">
-                  <span class="row-edit__number">{{ emp.employeeNumber }}</span>
-                  <input
-                    type="text"
-                    class="cell-input"
-                    formControlName="employeeName"
-                    autocomplete="name"
-                    maxlength="100"
-                  />
-                </td>
-                <td>
-                  <input
-                    type="email"
-                    class="cell-input"
-                    formControlName="mailAddress"
-                    autocomplete="email"
-                  />
-                </td>
-                <td>
-                  <input type="date" class="cell-input" formControlName="joinDate" />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    class="cell-input cell-input--narrow"
-                    formControlName="departmentId"
-                    min="0"
-                    step="1"
-                    title="Department ID"
-                  />
-                </td>
+                @if (isColumnVisible('name')) {
+                  <td class="name-td">
+                    <span class="row-edit__number">{{ emp.employeeNumber }}</span>
+                    <input
+                      type="text"
+                      class="cell-input"
+                      formControlName="employeeName"
+                      autocomplete="name"
+                      maxlength="100"
+                    />
+                  </td>
+                }
+                @if (isColumnVisible('email')) {
+                  <td>
+                    <input
+                      type="email"
+                      class="cell-input"
+                      formControlName="mailAddress"
+                      autocomplete="email"
+                    />
+                  </td>
+                }
+                @if (isColumnVisible('joined')) {
+                  <td>
+                    <input type="date" class="cell-input" formControlName="joinDate" />
+                  </td>
+                }
+                @if (isColumnVisible('department')) {
+                  <td>
+                    <input
+                      type="number"
+                      class="cell-input cell-input--narrow"
+                      formControlName="departmentId"
+                      min="0"
+                      step="1"
+                      title="Department ID"
+                    />
+                  </td>
+                }
                 <td class="actions">
                   <button
                     type="button"
@@ -122,25 +139,33 @@
               </tr>
               @if (editRowError()) {
                 <tr class="row--edit-error">
-                  <td colspan="5">
+                  <td [attr.colspan]="tableColumnCount()">
                     <p class="error row-edit__error">{{ editRowError() }}</p>
                   </td>
                 </tr>
               }
             } @else {
               <tr>
-                <td class="name-td">
-                  @if (showNameHoverTip(emp.employeeName)) {
-                    <span class="name-cell name-cell--tip" [attr.data-full]="emp.employeeName">{{
-                      emp.employeeName
-                    }}</span>
-                  } @else {
-                    <span class="name-cell">{{ emp.employeeName }}</span>
-                  }
-                </td>
-                <td>{{ emp.mailAddress || '—' }}</td>
-                <td>{{ joinDateLabel(emp) }}</td>
-                <td>{{ emp.deparmentName ?? '—' }}</td>
+                @if (isColumnVisible('name')) {
+                  <td class="name-td">
+                    @if (showNameHoverTip(emp.employeeName)) {
+                      <span class="name-cell name-cell--tip" [attr.data-full]="emp.employeeName">{{
+                        emp.employeeName
+                      }}</span>
+                    } @else {
+                      <span class="name-cell">{{ emp.employeeName }}</span>
+                    }
+                  </td>
+                }
+                @if (isColumnVisible('email')) {
+                  <td>{{ emp.mailAddress || '—' }}</td>
+                }
+                @if (isColumnVisible('joined')) {
+                  <td>{{ joinDateLabel(emp) }}</td>
+                }
+                @if (isColumnVisible('department')) {
+                  <td>{{ emp.deparmentName ?? '—' }}</td>
+                }
                 <td class="actions">
                   <div class="row-actions" [class.row-actions--open]="isActionsMenuOpen(emp)">
                     <button
@@ -184,4 +209,11 @@
     </div>
   }
 </section>
+
+<app-employee-list-column-settings
+  [open]="columnsModalOpen()"
+  [visibility]="columnVisibility()"
+  (visibilityChange)="onColumnVisibilityChange($event)"
+  (closed)="closeColumnsModal()"
+/>
 

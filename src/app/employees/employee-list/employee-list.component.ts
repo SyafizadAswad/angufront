@@ -10,6 +10,13 @@ import { Employee, EmployeeRequest } from '../../core/employee.model';
 import { EmployeeService } from '../../core/employee.service';
 import { GaugeComponent } from '../../gauge-test/gauge-test.component';
 import { getApiErrorMessage } from '../../core/api-error-message';
+import { EmployeeListColumnSettingsComponent } from '../employee-list-column-settings/employee-list-column-settings.component';
+import {
+  EmployeeListColumnKey,
+  EmployeeListColumnVisibility,
+  defaultColumnVisibility,
+  countVisibleColumns,
+} from '../employee-list-column-settings/employee-list-columns.model';
 
 export type EmployeeSortKey =
   | 'number-asc'
@@ -21,7 +28,7 @@ export type EmployeeSortKey =
 
 @Component({
   selector: 'app-employee-list',
-  imports: [RouterLink, ReactiveFormsModule, GaugeComponent],
+  imports: [RouterLink, ReactiveFormsModule, GaugeComponent, EmployeeListColumnSettingsComponent],
   templateUrl: './employee-list.component.html',
   styleUrl: './employee-list.component.scss',
 })
@@ -55,6 +62,13 @@ export class EmployeeListComponent implements OnInit {
   readonly editRowError = signal<string | null>(null);
   /** Which row’s actions dropdown is open (`employeeNumber`), or `null`. */
   readonly openActionsMenu = signal<string | null>(null);
+
+  readonly columnsModalOpen = signal(false);
+  readonly columnVisibility = signal(defaultColumnVisibility());
+
+  readonly tableColumnCount = computed(
+    () => countVisibleColumns(this.columnVisibility()) + 1,
+  );
 
   readonly editForm = this.fb.group({
     employeeName: this.fb.control('', {
@@ -145,6 +159,22 @@ export class EmployeeListComponent implements OnInit {
   /** Heuristic: only show the hover “full name” bubble when the label is likely truncated or very long. */
   showNameHoverTip(name: string): boolean {
     return name.trim().length >= 22;
+  }
+
+  isColumnVisible(key: EmployeeListColumnKey): boolean {
+    return this.columnVisibility()[key];
+  }
+
+  openColumnsModal(): void {
+    this.columnsModalOpen.set(true);
+  }
+
+  closeColumnsModal(): void {
+    this.columnsModalOpen.set(false);
+  }
+
+  onColumnVisibilityChange(next: EmployeeListColumnVisibility): void {
+    this.columnVisibility.set(next);
   }
 
   isEditing(emp: Employee): boolean {

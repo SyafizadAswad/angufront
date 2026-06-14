@@ -1,0 +1,44 @@
+@if (open()) {
+  <div
+    class="modal-backdrop"
+    role="presentation"
+    (click)="onBackdropClick($event)"
+  >
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="column-settings-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="modal__header">
+        <h3 id="column-settings-title">Display columns</h3>
+        <button type="button" class="modal__close btn btn--ghost" (click)="close()" aria-label="Close">
+          ✕
+        </button>
+      </header>
+
+      <p class="modal__hint">Changes apply immediately to the employee table.</p>
+
+      <ul class="column-list">
+        @for (col of columns; track col.key) {
+          <li class="column-list__item">
+            <label class="column-list__label">
+              <input
+                type="checkbox"
+                [checked]="isColumnChecked(col.key)"
+                [disabled]="isColumnChecked(col.key) && !canUncheck(col.key)"
+                (change)="onToggle(col.key, $event)"
+              />
+              <span>{{ col.label }}</span>
+            </label>
+          </li>
+        }
+      </ul>
+
+      <footer class="modal__footer">
+        <button type="button" class="btn btn--primary" (click)="close()">Done</button>
+      </footer>
+    </div>
+  </div>
+}
